@@ -1,0 +1,1046 @@
+/* ==========================================================================
+   Dashboard Analítico de Demanda y Saturación Operativa del 911
+   Condado de Montgomery, Pensilvania
+   Principios de Visualización:
+   1. Jerarquía Visual Dominante (EMS 50.1% y picos bimodales prioritarios)
+   2. Contraste Intencional Semántico (Azul médico, Ámbar vial, Rojo fuego)
+   3. Minimalismo Analítico (Edward Tufte: eliminación de chartjunk)
+   4. Honestidad Gráfica y Declaración de Simulación (Unidad 1)
+   5. Barras de Zoom y Controles Interactivos por Gráfico
+   ========================================================================== */
+
+:root {
+  /* Paleta Categórica Intencional */
+  --color-ems: #2563eb;             /* Azul médico accesible y prioritario */
+  --color-ems-light: rgba(37, 99, 235, 0.12);
+  --color-ems-glow: rgba(37, 99, 235, 0.25);
+  --color-ems-border: #1d4ed8;
+
+  --color-traffic: #d97706;         /* Ámbar de alerta vial */
+  --color-traffic-light: rgba(217, 119, 6, 0.12);
+  --color-traffic-glow: rgba(217, 119, 6, 0.25);
+  --color-traffic-border: #b45309;
+
+  --color-fire: #dc2626;            /* Rojo de emergencias por fuego */
+  --color-fire-light: rgba(220, 38, 38, 0.12);
+  --color-fire-border: #b91c1c;
+
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+
+  /* Modo Claro */
+  --bg-body: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #ffffff;
+  --bg-subtle: #f1f5f9;
+  --bg-input: #ffffff;
+  --border-subtle: #e2e8f0;
+  --border-focus: #94a3b8;
+
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+
+  /* Tipografía */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+
+  /* Sombras Tufte Minimalistas */
+  --shadow-subtle: 0 1px 3px rgba(15, 23, 42, 0.05);
+  --shadow-card: 0 4px 12px rgba(15, 23, 42, 0.06);
+  --shadow-dominant: 0 8px 24px rgba(37, 99, 235, 0.12);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 9999px;
+
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+}
+
+/* Modo Oscuro Ejecutivo / Command Center */
+[data-theme="dark"] {
+  --bg-body: #0b0f19;
+  --bg-surface: #111827;
+  --bg-surface-elevated: #1a2234;
+  --bg-subtle: #1f2937;
+  --bg-input: #172033;
+  --border-subtle: #242f44;
+  --border-focus: #3b82f6;
+
+  --gray-50: #0f172a;
+  --gray-100: #1e293b;
+  --gray-200: #334155;
+  --gray-300: #475569;
+  --gray-400: #64748b;
+  --gray-500: #94a3b8;
+  --gray-600: #cbd5e1;
+  --gray-700: #e2e8f0;
+  --gray-800: #f1f5f9;
+  --gray-900: #f8fafc;
+
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 4px 14px rgba(0, 0, 0, 0.5);
+  --shadow-dominant: 0 8px 28px rgba(37, 99, 235, 0.28);
+}
+
+/* Reset y base */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-body);
+  color: var(--gray-800);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding: 24px 20px 60px;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+.dashboard-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ==========================================================================
+   1. Header Institucional y Académico
+   ========================================================================== */
+.executive-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.header-title-block {
+  flex: 1;
+}
+
+.institutional-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gray-500);
+  background-color: var(--bg-subtle);
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  margin-bottom: 10px;
+  border: 1px solid var(--border-subtle);
+}
+
+.badge-separator {
+  opacity: 0.5;
+}
+
+.dashboard-title {
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--gray-900);
+  margin-bottom: 8px;
+  line-height: 1.25;
+}
+
+.dashboard-subtitle {
+  font-size: 14.5px;
+  color: var(--gray-600);
+  max-width: 960px;
+  line-height: 1.48;
+  margin-bottom: 10px;
+}
+
+.authorship-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--gray-500);
+}
+
+.authorship-meta strong {
+  color: var(--gray-700);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--gray-700);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-secondary:hover {
+  background-color: var(--bg-subtle);
+  color: var(--gray-900);
+  border-color: var(--border-focus);
+}
+
+/* ==========================================================================
+   2. Barra Global de Filtros e Interacción Reactiva
+   ========================================================================== */
+.controls-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-subtle);
+  position: sticky;
+  top: 12px;
+  z-index: 50;
+  backdrop-filter: blur(8px);
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray-500);
+  white-space: nowrap;
+}
+
+.category-pills, .time-presets {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--bg-subtle);
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+
+.pill-btn, .time-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-600);
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.pill-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.pill-weight {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  opacity: 0.85;
+  background: rgba(0, 0, 0, 0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+[data-theme="dark"] .pill-weight {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.pill-btn:hover, .time-chip:hover {
+  color: var(--gray-900);
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="dark"] .pill-btn:hover, [data-theme="dark"] .time-chip:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.pill-btn.active, .time-chip.active {
+  background-color: var(--bg-surface);
+  color: var(--gray-900);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--border-subtle);
+}
+
+.pill-btn.ems-pill.active {
+  color: var(--color-ems);
+  border-color: var(--color-ems);
+}
+
+.pill-btn.traffic-pill.active {
+  color: var(--color-traffic);
+  border-color: var(--color-traffic);
+}
+
+.pill-btn.fire-pill.active {
+  color: var(--color-fire);
+  border-color: var(--color-fire);
+}
+
+/* Switch de Simulación de Modelo */
+.model-switch-wrapper {
+  display: flex;
+  background-color: var(--bg-subtle);
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-subtle);
+}
+
+.model-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-500);
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.model-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.static-dot {
+  background-color: #ef4444;
+}
+
+.dynamic-dot {
+  background-color: #10b981;
+}
+
+.model-btn.active {
+  background-color: var(--bg-surface);
+  color: var(--gray-900);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* ==========================================================================
+   3. Jerarquía Visual: Hero KPI Grid
+   ========================================================================== */
+.hero-kpi-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 1200px) {
+  .hero-kpi-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .hero-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hero-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-subtle);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 210px;
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.hero-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-focus);
+}
+
+/* Tarjeta Dominante (EMS 50.1%) - Máxima Jerarquía Visual */
+.hero-card.dominant-card {
+  border: 2px solid var(--color-ems);
+  background: linear-gradient(135deg, var(--bg-surface) 75%, var(--color-ems-light));
+  box-shadow: var(--shadow-dominant);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-card.dominant-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-ems), #60a5fa);
+}
+
+.hero-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hero-badge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.badge-ems {
+  background-color: var(--color-ems-light);
+  color: var(--color-ems);
+}
+
+.badge-traffic {
+  background-color: var(--color-traffic-light);
+  color: var(--color-traffic);
+}
+
+.badge-warning {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.badge-geo {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.hero-subtext {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-500);
+}
+
+.hero-metric-row {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.hero-metric-val {
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: var(--gray-900);
+  line-height: 1;
+}
+
+.dominant-card .hero-metric-val {
+  font-size: 42px;
+  color: var(--color-ems);
+}
+
+.hero-metric-detail {
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-metric-detail strong {
+  font-size: 13.5px;
+  color: var(--gray-800);
+}
+
+.hero-metric-detail span {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+.hero-description {
+  font-size: 12.5px;
+  color: var(--gray-600);
+  line-height: 1.45;
+  border-top: 1px dashed var(--border-subtle);
+  padding-top: 10px;
+  word-break: normal;
+}
+
+/* ==========================================================================
+   4. Marco de Defensa de la Función de Utilidad
+   ========================================================================== */
+.utility-defense-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-subtle);
+}
+
+.defense-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.defense-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: rgba(37, 99, 235, 0.12);
+  color: var(--color-ems);
+  padding: 3px 9px;
+  border-radius: var(--radius-sm);
+}
+
+.defense-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.defense-content p {
+  font-size: 13px;
+  color: var(--gray-600);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.criteria-pills-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr;
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .criteria-pills-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.criteria-card {
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+}
+
+.criteria-card strong {
+  color: var(--gray-800);
+  font-size: 12.5px;
+}
+
+.criteria-card span {
+  color: var(--gray-600);
+  line-height: 1.42;
+}
+
+.criteria-card code {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  background-color: rgba(0, 0, 0, 0.08);
+  padding: 3px 6px;
+  border-radius: 4px;
+  color: var(--color-ems);
+  font-weight: 600;
+  margin: 4px 0;
+}
+
+[data-theme="dark"] .criteria-card code {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ==========================================================================
+   5. Grid de Visualizaciones Principales (Observable Plot)
+   ========================================================================== */
+.visualizations-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+.viz-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  overflow: visible;
+}
+
+.viz-card.card-uncertainty {
+  grid-column: 1 / -1; /* Ocupa todo el ancho */
+}
+
+@media (max-width: 1024px) {
+  .visualizations-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.viz-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.viz-title-wrap {
+  flex: 1;
+  min-width: 220px;
+}
+
+.viz-type-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-ems);
+  margin-bottom: 3px;
+}
+
+.viz-title {
+  font-size: 16.5px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--gray-900);
+}
+
+/* Barra de Herramientas de Zoom en cada Tarjeta */
+.card-zoom-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  padding: 3px 6px;
+  border-radius: var(--radius-pill);
+}
+
+.toolbar-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--gray-500);
+  margin-left: 4px;
+}
+
+.zoom-btn {
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--gray-600);
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.zoom-btn:hover {
+  background-color: rgba(255, 255, 255, 0.4);
+  color: var(--gray-900);
+}
+
+[data-theme="dark"] .zoom-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.zoom-btn.active {
+  background-color: var(--bg-surface);
+  color: var(--gray-900);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--border-subtle);
+}
+
+.viz-desc {
+  font-size: 13px;
+  color: var(--gray-600);
+  line-height: 1.48;
+}
+
+.plot-container {
+  width: 100%;
+  min-height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-subtle);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  padding: 12px 8px;
+  overflow-x: auto;
+}
+
+/* Reglas Estéticas para Observable Plot SVG */
+.plot-container svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  font-family: var(--font-sans);
+  color: var(--gray-800);
+  overflow: visible;
+}
+
+.plot-container svg text {
+  font-family: var(--font-sans);
+  fill: var(--gray-700);
+}
+
+[data-theme="dark"] .plot-container svg text {
+  fill: var(--gray-400);
+}
+
+.viz-footer-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-600);
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 5px;
+}
+
+.badge-tag-sm {
+  font-size: 11.5px;
+  padding: 3px 8px;
+  background-color: var(--bg-subtle);
+  border-radius: 4px;
+}
+
+.scale-text {
+  font-size: 11.5px;
+  font-family: var(--font-mono);
+  color: var(--gray-500);
+}
+
+/* ==========================================================================
+   Cuadrícula de Métricas de Incertidumbre (Boxplot)
+   Evita que las etiquetas se superpongan con los puntos
+   ========================================================================== */
+.boxplot-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+@media (max-width: 800px) {
+  .boxplot-stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-badge-item {
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-badge-item.ems-badge {
+  background-color: rgba(37, 99, 235, 0.06);
+  border-color: rgba(37, 99, 235, 0.25);
+}
+
+.stat-badge-item.traffic-badge {
+  background-color: rgba(217, 119, 6, 0.06);
+  border-color: rgba(217, 119, 6, 0.25);
+}
+
+.stat-badge-item.fire-badge {
+  background-color: rgba(220, 38, 38, 0.06);
+  border-color: rgba(220, 38, 38, 0.25);
+}
+
+.stat-badge-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--gray-500);
+}
+
+.stat-badge-val {
+  font-family: var(--font-mono);
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.stat-badge-sub {
+  font-size: 11.5px;
+  color: var(--gray-600);
+}
+
+/* ==========================================================================
+   6. Comparativa Operativa y Declaración Ética de Simulación
+   ========================================================================== */
+.comparison-section {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+.ethics-disclaimer-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background-color: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  margin-bottom: 20px;
+}
+
+.ethics-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.ethics-text {
+  font-size: 12.5px;
+  color: var(--gray-700);
+  line-height: 1.48;
+}
+
+.ethics-text strong {
+  color: #d97706;
+}
+
+.section-title-wrap {
+  margin-bottom: 20px;
+}
+
+.section-tag {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray-500);
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--gray-900);
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+
+.section-desc {
+  font-size: 13.5px;
+  color: var(--gray-600);
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 860px) {
+  .comparison-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.comparison-card {
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  border: 1px solid var(--border-subtle);
+}
+
+.static-model-card {
+  background-color: rgba(239, 68, 68, 0.03);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.dynamic-model-card {
+  background-color: rgba(16, 185, 129, 0.04);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.model-badge-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.model-type-pill {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.static-pill {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.dynamic-pill {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.model-badge-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.comparison-metric-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.comparison-metric-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  padding: 5px 0;
+  border-bottom: 1px dotted var(--border-subtle);
+}
+
+.metric-lbl {
+  color: var(--gray-600);
+}
+
+.metric-bad {
+  color: #ef4444;
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.metric-good {
+  color: #10b981;
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   7. Footer Académico y Referencias
+   ========================================================================== */
+.executive-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 12.5px;
+  color: var(--gray-500);
+}
+
+@media (max-width: 768px) {
+  .executive-footer {
+    grid-template-columns: 1fr;
+  }
+}
+
+.executive-footer h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-700);
+  margin-bottom: 6px;
+}
+
+.executive-footer a {
+  color: var(--color-ems);
+  text-decoration: none;
+}
+
+.executive-footer a:hover {
+  text-decoration: underline;
+}
